@@ -33,6 +33,7 @@
 #include "iterator/CellListAllPairsIterator.hpp"
 #include "iterator/CellListIterator.hpp"
 #include <iomanip>
+#include <boost/serialization/vector.hpp>
 
 namespace espressopp {
 
