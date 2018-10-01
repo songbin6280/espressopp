@@ -22,7 +22,7 @@ r"""
 espressopp.integrator.ExtPlumed
 *************************************************
 
-This extension serves as interface between ESPResSo++ and `PLUMED <https://plumed.github.io/>`_. PLUMED can
+This extension serves as interface between ESPResSo++ and `PLUMED <http://www.plumed.org/home>`_. PLUMED can
 be used to run realtime analysis and bias the simulation along chosen collective variables. Details of using
 PLUMED and its input file can be found on its website.
 
