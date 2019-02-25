@@ -20,34 +20,26 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 */
 
-// ESPP_CLASS
-#ifndef _VERSION_HPP
-#define _VERSION_HPP
-#include <string>
-#include "boost/version.hpp"
+#define BOOST_TEST_MODULE Grid
 
-#define MAJORVERSION 2
-#define MINORVERSION 0
-#define PATCHLEVEL   1
-#include "gitversion.hpp"
+#include "ut.hpp"
+#include <boost/test/floating_point_comparison.hpp>
 
-namespace espressopp {
+#include "esutil/Grid.hpp"
+using namespace espressopp;
+using namespace esutil;
 
-  class Version {
-  public:
-    Version();
-    std::string info();
-    static void registerPython();
+BOOST_AUTO_TEST_CASE(testGrid) {
+  Grid testGrid(1, 2, 3);
+  BOOST_REQUIRE_EQUAL(testGrid.getNumberOfCells(), int(6));
 
-  private:
-    int major;
-    int minor;
-    int patchlevel;
-    std::string name;
-    std::string gitrevision;
-    std::string boostversion;
-    std::string date;
-    std::string time;
-  };
+  BOOST_CHECK_EQUAL(testGrid.getGridSize(0), int(1));
+  BOOST_CHECK_EQUAL(testGrid.getGridSize(1), int(2));
+  BOOST_CHECK_EQUAL(testGrid.getGridSize(2), int(3));
+
+  for (int i = 0; i < 6; ++i) {
+    int x, y, z;
+    testGrid.mapIndexToPosition(x, y, z, i);
+    BOOST_CHECK_EQUAL(testGrid.mapPositionToIndex(x, y, z), i);
+  }
 }
-#endif
