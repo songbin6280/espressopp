@@ -39,3 +39,4 @@ integrator
    espressopp.integrator.VelocityVerletRESPA.rst
    espressopp.integrator.VelocityVerletOnGroup.rst
    espressopp.integrator.VelocityVerletOnRadius.rst
+   espressopp.integrator.ExtPlumed.rst
