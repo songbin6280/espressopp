@@ -52,6 +52,8 @@ namespace espressopp {
 
         /** Register this class so it can be used from Python. */
         static void registerPython();
+        void setReCalcForces(bool);
+        bool getReCalcForces();
 
       protected:
         bool resortFlag;  //!< true implies need for resort of particles
@@ -94,6 +96,7 @@ namespace espressopp {
         real timeResort;
 
         static LOG4ESPP_DECL_LOGGER(theLogger);
+        bool recalcForces = true;
     };
   }
 }

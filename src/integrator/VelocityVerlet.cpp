@@ -85,8 +85,6 @@ namespace espressopp {
         // timeResort += timeIntegrate.getElapsedTime();
       }
 
-      bool recalcForces = true;  // TODO: more intelligent
-
       if (recalcForces) {
         LOG4ESPP_INFO(theLogger, "recalc forces before starting main integration loop");
 
@@ -406,6 +404,16 @@ namespace espressopp {
       }
     }
 
+    void VelocityVerlet::setReCalcForces(bool f)
+    {
+        recalcForces = f;
+    }
+
+    bool VelocityVerlet::getReCalcForces()
+    {
+        return recalcForces;
+    }
+
     /****************************************************
     ** REGISTRATION WITH PYTHON
     ****************************************************/
@@ -417,6 +425,7 @@ namespace espressopp {
       // Note: use noncopyable and no_init for abstract classes
       class_<VelocityVerlet, bases<MDIntegrator>, boost::noncopyable >
         ("integrator_VelocityVerlet", init< shared_ptr<System> >())
+        .add_property("recalcForces", &VelocityVerlet::getReCalcForces, &VelocityVerlet::setReCalcForces)
         .def("getTimers", &wrapGetTimers)
         .def("resetTimers", &VelocityVerlet::resetTimers)
         ;
