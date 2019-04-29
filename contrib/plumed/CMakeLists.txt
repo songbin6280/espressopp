@@ -1,6 +1,7 @@
 find_package(DL REQUIRED)
+set_source_files_properties(Plumed.c PROPERTIES LANGUAGE CXX)
 add_library(espressopp_plumed STATIC Plumed.c)
-target_compile_definitions(espressopp_plumed PRIVATE __PLUMED_HAS_DLOPEN)
+target_compile_definitions(espressopp_plumed PRIVATE __PLUMED_HAS_DLOPEN __PLUMED_WRAPPER_LIBCXX11)
 target_include_directories(espressopp_plumed PRIVATE ${DL_INCLUDES})
 target_link_libraries(espressopp_plumed ${DL_LIBRARIES})
 set_target_properties(espressopp_plumed PROPERTIES PREFIX "" SUFFIX ".a")
