@@ -24,7 +24,6 @@
 
 #include "python.hpp"
 #include "types.hpp"
-#include "logging.hpp"
 #include "Extension.hpp"
 #include "boost/signals2.hpp"
 #include "mpi.hpp"
@@ -45,7 +44,6 @@ namespace espressopp {
       void setMDChargeUnits(real);
       void setMDMassUnits(real);
       void setRestart(int);
-      void readInputLine(std::string);
       void setTimeUnit(real);
       void setEnergyUnit(real);
       void setLengthUnit(real);
@@ -58,9 +56,9 @@ namespace espressopp {
 
     private:
       PLMD::Plumed * p;
-      std::string plumedfile;
+      std::string dat;
       std::string units;
-      std::string plumedlog;
+      std::string log;
       real dt;
       int step;
 
@@ -73,6 +71,7 @@ namespace espressopp {
       real * f;
       real bias;
       int plumedNeedsEnergy;
+      bool dat_is_file;
 
       boost::signals2::connection _runInit, _aftCalcF, _aftIntP;
       void connect();

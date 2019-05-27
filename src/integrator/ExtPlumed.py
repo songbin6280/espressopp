@@ -90,5 +90,5 @@ if pmi.isController :
         __metaclass__ = pmi.Proxy
         pmiproxydefs = dict(
             cls = 'espressopp.integrator.ExtPlumedLocal',
-            pmicall = ['getBias', 'setNaturalUnits', 'setTimeUnit', 'setEnergyUnit', 'setLengthUnit', 'setKbT', 'setRealPrecison', 'setMDChargeUnit', 'setMDMassUnit', 'setRestart', 'readInputLine', 'Init']
+            pmicall = ['getBias', 'setNaturalUnits', 'setTimeUnit', 'setEnergyUnit', 'setLengthUnit', 'setKbT', 'setRealPrecison', 'setMDChargeUnit', 'setMDMassUnit', 'setRestart', 'Init']
             )

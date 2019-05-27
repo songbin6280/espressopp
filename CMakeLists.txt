@@ -92,9 +92,9 @@ endif()
 #Process Plumed settings
 ########################################################################
 
-set(PLUMED_LINK_TYPES runtime shared static)
+set(PLUMED_LINK_OPTIONS runtime shared static)
 set(PLUMED_LINK_TYPE "runtime" CACHE STRING "3 ways to link PLUMED: runtime, static, shared")
-set_property(CACHE PLUMED_LINK_TYPE PROPERTY STRINGS ${PLUMED_LINK_TYPES})
+set_property(CACHE PLUMED_LINK_TYPE PROPERTY STRINGS ${PLUMED_LINK_OPTIONS})
 
 if (NOT "${PLUMED_LINK_TYPE}" STREQUAL "runtime")
   if (DEFINED PLUMED_HOME)
