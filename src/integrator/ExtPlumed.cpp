@@ -38,10 +38,10 @@ namespace espressopp {
 
   namespace integrator {
 
-    ExtPlumed::ExtPlumed(shared_ptr<System> _system, python::object _pyobj, string _plumedfile, string _plumedlog, real _dt):
+    ExtPlumed::ExtPlumed(shared_ptr<System> _system, python::object _pyobj, string _dat, string _log, real _dt):
       Extension(_system),
-      plumedfile(_plumedfile),
-      plumedlog(_plumedlog),
+      dat(_dat),
+      log(_log),
       dt(_dt),
       step(0),
       nreal(0),
@@ -114,10 +114,6 @@ namespace espressopp {
 
     void ExtPlumed::setRestart(int _res) {
       p->cmd("setRestart", &_res);
-    }
-
-    void ExtPlumed::readInputLine(string _input) {
-      p->cmd("readInputLine", _input.c_str());
     }
 
     void ExtPlumed::Init() {
@@ -266,7 +262,6 @@ namespace espressopp {
         .def("setMDChargeUnit", &ExtPlumed::setMDChargeUnits)
         .def("setMDMassUnit", &ExtPlumed::setMDMassUnits)
         .def("setRestart", &ExtPlumed::setRestart)
-        .def("readInputLine", &ExtPlumed::readInputLine)
         .def("Init", &ExtPlumed::Init)
         .def("connect", &ExtPlumed::connect)
         .def("disconnect", &ExtPlumed::disconnect)
