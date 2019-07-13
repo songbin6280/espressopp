@@ -37,18 +37,8 @@ namespace espressopp {
     class ExtPlumed : public Extension {
 
     public:
-      ExtPlumed(shared_ptr < System >, python::object, std::string, std::string, real);
+      ExtPlumed(shared_ptr < System >, python::object, std::string, std::string, real, bool);
       real getBias();
-      void setNaturalUnits();
-      void setRealPrecision(int);
-      void setMDChargeUnits(real);
-      void setMDMassUnits(real);
-      void setRestart(int);
-      void setTimeUnit(real);
-      void setEnergyUnit(real);
-      void setLengthUnit(real);
-      void setKbT(real);
-      void Init();
 
       virtual ~ExtPlumed();
       /** Register this class so it can be used from Python. */
@@ -56,9 +46,6 @@ namespace espressopp {
 
     private:
       PLMD::Plumed * p;
-      std::string dat;
-      std::string units;
-      std::string log;
       real dt;
       int step;
 
@@ -70,10 +57,12 @@ namespace espressopp {
       real * pos;
       real * f;
       real bias;
-      int plumedNeedsEnergy;
-      bool dat_is_file;
+      bool particlesChanged;
 
       boost::signals2::connection _runInit, _aftCalcF, _aftIntP;
+      boost::signals2::connection _onParticlesChanged;
+
+      void onParticlesChanged();
       void connect();
       void disconnect();
       void setStep();

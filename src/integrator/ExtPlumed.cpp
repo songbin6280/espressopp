@@ -38,10 +38,8 @@ namespace espressopp {
 
   namespace integrator {
 
-    ExtPlumed::ExtPlumed(shared_ptr<System> _system, python::object _pyobj, string _dat, string _log, real _dt):
+    ExtPlumed::ExtPlumed(shared_ptr<System> _system, python::object _pyobj, string _dat, string _log, real _dt, bool _restart):
       Extension(_system),
-      dat(_dat),
-      log(_log),
       dt(_dt),
       step(0),
       nreal(0),
@@ -49,25 +47,45 @@ namespace espressopp {
       masses(NULL),
       f(NULL),
       pos(NULL),
-      charges(NULL)
+      charges(NULL),
+      particlesChanged(false)
     {
-      System& system = getSystemRef();
       p=new PLMD::Plumed;
-
-      PyObject * pyobj = _pyobj.ptr();
-      PyMPICommObject* pyMPIComm = (PyMPICommObject*) pyobj;
-      MPI_Comm * comm_p = &pyMPIComm->ob_mpi;
-      p->cmd("setMPIComm", comm_p);
-      p->cmd("setPlumedDat",plumedfile.c_str());
-      p->cmd("setLogFile",plumedlog.c_str());
+      // PyObject * pyobj = _pyobj.ptr();
+      // PyMPICommObject* pyMPIComm = (PyMPICommObject*) pyobj;
+      // MPI_Comm * comm_p = &pyMPIComm->ob_mpi;
+      longint tmp = _system->storage->getNRealParticles();
+      boost::mpi::all_reduce(*_system->comm, tmp, natoms, std::plus<longint>());
       p->cmd("setMDEngine","ESPResSo++");
-      longint nReal = system.storage->getNRealParticles();
-      boost::mpi::all_reduce(*system.comm, nReal, natoms, std::plus<longint>());
+      MPI_Comm comm_p = MPI_Comm(*_system->comm);
+      p->cmd("setMPIComm", &comm_p);
+      // p->cmd("setMPIComm", comm_p);
+      bool dat_is_file = (_dat.find_first_of("\n") > _dat.size()); // test if input is a multline string.
+      if (dat_is_file) p->cmd("setPlumedDat", _dat.c_str());
+      p->cmd("setLogFile", _log.c_str());
       p->cmd("setTimestep",&dt);
       p->cmd("setNatoms",&natoms);
+      if (_restart) {
+        int res = 1;
+        p->cmd("setRestart", &res);
+      }
+      p->cmd("init");
+      if (!dat_is_file) {
+        std::istringstream iss(_dat);
+        std::string token;
+        iss >> std::ws; // remove leading white spaces in a line
+        while(std::getline(iss, token)) {
+          iss >> std::ws; // remove leading white spaces in a line
+          if (token[0] == '#') continue;
+          p->cmd("readInputLine", token.c_str());
+          token.clear();
+        }
+      }
+      _onParticlesChanged = _system->storage->onParticlesChanged.connect(boost::bind(&ExtPlumed::onParticlesChanged, this));
     }
 
     ExtPlumed::~ExtPlumed() {
+      _onParticlesChanged.disconnect();
       delete [] f;
       delete [] pos;
       delete [] charges;
@@ -80,44 +98,8 @@ namespace espressopp {
       return bias;
     }
 
-    void ExtPlumed::setNaturalUnits() {
-      p->cmd("setNaturalUnits");
-    }
-
-    void ExtPlumed::setTimeUnit(real _factor) {
-      p->cmd("setMDTimeUnits",&_factor);
-    }
-
-    void ExtPlumed::setLengthUnit(real _factor) {
-      p->cmd("setMDLengthUnits",&_factor);
-    }
-
-    void ExtPlumed::setEnergyUnit(real _factor) {
-      p->cmd("setMDEnergyUnits", &_factor);
-    }
-
-    void ExtPlumed::setKbT(real _kbt) {
-      p->cmd("setKbT", &_kbt);
-    }
-
-    void ExtPlumed::setRealPrecision(int _size) {
-      p->cmd("setRealPrecision", &_size);
-    }
-
-    void ExtPlumed::setMDChargeUnits(real _factor) {
-      p->cmd("setMDChargeUnits", &_factor);
-    }
-
-    void ExtPlumed::setMDMassUnits(real _factor) {
-      p->cmd("setMDMassUnits", &_factor);
-    }
-
-    void ExtPlumed::setRestart(int _res) {
-      p->cmd("setRestart", &_res);
-    }
-
-    void ExtPlumed::Init() {
-      p->cmd("init");
+    void ExtPlumed::onParticlesChanged() {
+      particlesChanged = true;
     }
 
     void ExtPlumed::disconnect() {
@@ -137,67 +119,55 @@ namespace espressopp {
     }
 
     void ExtPlumed::updateForces() {
-      int update_gatindex=0;
       System& system = getSystemRef();
       CellList realCells = system.storage->getRealCells();
 
-      // Try to find out if the domain decomposition has been updated
-      if(nreal!=system.storage->getNRealParticles()) {
+      if (nreal!=system.storage->getNRealParticles()) {
+        nreal = system.storage->getNRealParticles();
         if(charges) delete [] charges;
         if(masses) delete [] masses;
         if(gatindex) delete [] gatindex;
         if(pos) delete [] pos;
         if(f) delete [] f;
-        nreal = system.storage->getNRealParticles();
         gatindex = new int [nreal];
         masses = new real [nreal];
         charges = new real [nreal];
         pos = new real[nreal*3];
         f = new real[nreal*3];
-        update_gatindex=1;
-      } else {
-        int i = 0;
-        for(CellListIterator cit(realCells); !cit.isDone() && i < nreal; ++cit, ++i) {
-          if(gatindex[i]!=static_cast<int>(cit->id()-1)) {
-            update_gatindex=1;
-            break;
+
+        for(auto tp=std::make_pair(0, CellListIterator(realCells));
+            tp.first<nreal && !tp.second.isDone();
+            ++tp.first, ++tp.second)
+          {
+            gatindex[tp.first] = static_cast<int>(tp.second->id())-1;
           }
-        }
+        particlesChanged = false;
+
+      } else if (particlesChanged) {
+        for(auto tp=std::make_pair(0, CellListIterator(realCells));
+            tp.first<nreal && !tp.second.isDone();
+            ++tp.first, ++tp.second)
+          {
+            gatindex[tp.first] = static_cast<int>(tp.second->id())-1;
+          }
+        particlesChanged = false;
       }
 
-      boost::mpi::all_reduce(*system.comm, update_gatindex, std::plus<int>());
-      if(update_gatindex) {
-        int i=0;
-        for(CellListIterator cit(realCells); !cit.isDone() && i < nreal; ++cit, ++i) {
-          gatindex[i]=static_cast<int>(cit->id())-1;
-          masses[i]=cit->mass();
-          charges[i]=cit->q();
-          pos[i*3] = cit->position()[0];
-          pos[i*3+1] = cit->position()[1];
-          pos[i*3+2] = cit->position()[2];
-          f[i*3] = cit->force()[0];
-          f[i*3+1] = cit->force()[1];
-          f[i*3+2] = cit->force()[2];
+      for(auto tp=std::make_pair(0, CellListIterator(realCells));
+          tp.first<nreal && !tp.second.isDone();
+          ++tp.first, ++tp.second)
+        {
+          masses[tp.first] = tp.second->mass();
+          charges[tp.first] = tp.second->q();
+          std::copy(tp.second->force().begin(), tp.second->force().end(), &f[tp.first*3]);
+          std::copy(tp.second->position().begin(), tp.second->position().end(), &pos[tp.first*3]);
         }
-      } else {
-        int i = 0;
-        for(CellListIterator cit(realCells); !cit.isDone() && i < nreal; ++cit, ++i) {
-          masses[i]=cit->mass();
-          charges[i]=cit->q();
-          pos[i*3] = cit->position()[0];
-          pos[i*3+1] = cit->position()[1];
-          pos[i*3+2] = cit->position()[2];
-          f[i*3] = cit->force()[0];
-          f[i*3+1] = cit->force()[1];
-          f[i*3+2] = cit->force()[2];
-        }
-      }
 
       p->cmd("setStep",&step);
       p->cmd("setAtomsNlocal",&nreal);
       p->cmd("setAtomsGatindex",&gatindex[0]);
-      real box[3][3];
 
+      real box[3][3];
       for(int i=0;i<3;i++) for(int j=0;j<3;j++) box[i][j]=0.0;
       Real3D L = system.bc->getBoxL();
       box[0][0]=L[0];
@@ -216,7 +186,7 @@ namespace espressopp {
       p->cmd("getBias",&bias);
       p->cmd("prepareCalc");
 
-      plumedNeedsEnergy = 0;
+      int plumedNeedsEnergy = 0;
       p->cmd("isEnergyNeeded", &plumedNeedsEnergy);
       if (plumedNeedsEnergy) {
         real pot_energy = 0.;
@@ -227,15 +197,14 @@ namespace espressopp {
         pot_energy /= system.comm->size(); // PLUMED defines PE this way.
         p->cmd("setEnergy", &pot_energy);
       }
-
       p->cmd("performCalc");
 
-      // Modifying forces on real particles on each processor.
-      int k = 0;
-      for(CellListIterator cit(realCells); !cit.isDone(); ++cit, ++k) {
-        Real3D F = Real3D(f[k*3], f[k*3+1], f[k*3+2]);
-        cit->setF(F);
-      }
+      for(auto tp=std::make_pair(0, CellListIterator(realCells));
+          tp.first<nreal && !tp.second.isDone();
+          ++tp.first, ++tp.second)
+        {
+          std::copy(&f[tp.first*3], &f[tp.first*3+3], tp.second->force().begin());
+        }
     }
 
     void ExtPlumed::updateStep() {
@@ -251,18 +220,8 @@ namespace espressopp {
 
       class_<ExtPlumed, shared_ptr<ExtPlumed>, bases<Extension> >
 
-        ("integrator_ExtPlumed", init< shared_ptr< System >, python::object, string, string, real >())
+        ("integrator_ExtPlumed", init< shared_ptr< System >, python::object, string, string, real, bool>())
         .def("getBias", &ExtPlumed::getBias)
-        .def("setNaturalUnits", &ExtPlumed::setNaturalUnits)
-        .def("setTimeUnit", &ExtPlumed::setTimeUnit)
-        .def("setEnergyUnit", &ExtPlumed::setEnergyUnit)
-        .def("setLengthUnit", &ExtPlumed::setLengthUnit)
-        .def("setKbT", &ExtPlumed::setKbT)
-        .def("setRealPrecision", &ExtPlumed::setRealPrecision)
-        .def("setMDChargeUnit", &ExtPlumed::setMDChargeUnits)
-        .def("setMDMassUnit", &ExtPlumed::setMDMassUnits)
-        .def("setRestart", &ExtPlumed::setRestart)
-        .def("Init", &ExtPlumed::Init)
         .def("connect", &ExtPlumed::connect)
         .def("disconnect", &ExtPlumed::disconnect)
         ;
