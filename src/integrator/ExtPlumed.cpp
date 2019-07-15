@@ -20,8 +20,6 @@
 
 #include <string>
 #include "python.hpp"
-#include "types.hpp"
-#include "Real3D.hpp"
 #include "System.hpp"
 #include "storage/Storage.hpp"
 #include "interaction/Interaction.hpp"
@@ -29,7 +27,6 @@
 #include "bc/BC.hpp"
 #include "ExtPlumed.hpp"
 #include "mpi.hpp"
-#include <mpi4py/mpi4py.h>
 
 namespace espressopp {
 
@@ -51,15 +48,11 @@ namespace espressopp {
       particlesChanged(false)
     {
       p=new PLMD::Plumed;
-      // PyObject * pyobj = _pyobj.ptr();
-      // PyMPICommObject* pyMPIComm = (PyMPICommObject*) pyobj;
-      // MPI_Comm * comm_p = &pyMPIComm->ob_mpi;
       longint tmp = _system->storage->getNRealParticles();
       boost::mpi::all_reduce(*_system->comm, tmp, natoms, std::plus<longint>());
       p->cmd("setMDEngine","ESPResSo++");
-      MPI_Comm comm_p = MPI_Comm(*_system->comm);
-      p->cmd("setMPIComm", &comm_p);
-      // p->cmd("setMPIComm", comm_p);
+      MPI_Comm comm = MPI_Comm(*_system->comm);
+      p->cmd("setMPIComm", &comm);
       bool dat_is_file = (_dat.find_first_of("\n") > _dat.size()); // test if input is a multline string.
       if (dat_is_file) p->cmd("setPlumedDat", _dat.c_str());
       p->cmd("setLogFile", _log.c_str());
@@ -214,6 +207,7 @@ namespace espressopp {
     /****************************************************
      ** REGISTRATION WITH PYTHON
      ****************************************************/
+
     void ExtPlumed::registerPython() {
 
       using namespace espressopp::python;
