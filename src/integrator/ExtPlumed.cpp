@@ -152,8 +152,8 @@ namespace espressopp {
         {
           masses[tp.first] = tp.second->mass();
           charges[tp.first] = tp.second->q();
-          std::copy(tp.second->force().begin(), tp.second->force().end(), &f[tp.first*3]);
-          std::copy(tp.second->position().begin(), tp.second->position().end(), &pos[tp.first*3]);
+          std::memcpy(f+tp.first*3, tp.second->force().get(), sizeof(real)*3);
+          std::memcpy(pos+tp.first*3, tp.second->position().get(), sizeof(real)*3);
         }
 
       p->cmd("setStep",&step);
@@ -196,7 +196,7 @@ namespace espressopp {
           tp.first<nreal && !tp.second.isDone();
           ++tp.first, ++tp.second)
         {
-          std::copy(&f[tp.first*3], &f[tp.first*3+3], tp.second->force().begin());
+          std::memcpy(tp.second->force().get(), f+tp.first*3, sizeof(real)*3);
         }
     }
 
