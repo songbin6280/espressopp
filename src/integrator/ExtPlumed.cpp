@@ -48,8 +48,8 @@ namespace espressopp {
       particlesChanged(false)
     {
       p=new PLMD::Plumed;
-      longint tmp = _system->storage->getNRealParticles();
-      boost::mpi::all_reduce(*_system->comm, tmp, natoms, std::plus<longint>());
+      int real_precision = sizeof(real);
+      p->cmd("setRealPrecision",&real_precision);
       p->cmd("setMDEngine","ESPResSo++");
       MPI_Comm comm = MPI_Comm(*_system->comm);
       p->cmd("setMPIComm", &comm);
@@ -57,6 +57,8 @@ namespace espressopp {
       if (dat_is_file) p->cmd("setPlumedDat", _dat.c_str());
       p->cmd("setLogFile", _log.c_str());
       p->cmd("setTimestep",&dt);
+      longint tmp = _system->storage->getNRealParticles();
+      boost::mpi::all_reduce(*_system->comm, tmp, natoms, std::plus<longint>());
       p->cmd("setNatoms",&natoms);
       if (_restart) {
         int res = 1;
