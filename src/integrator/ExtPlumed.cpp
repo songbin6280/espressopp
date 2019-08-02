@@ -35,7 +35,7 @@ namespace espressopp {
 
   namespace integrator {
 
-    ExtPlumed::ExtPlumed(shared_ptr<System> _system, python::object _pyobj, string _dat, string _log, real _dt, bool _restart):
+    ExtPlumed::ExtPlumed(shared_ptr<System> _system, string _dat, string _log, real _dt, bool _restart):
       Extension(_system),
       dt(_dt),
       step(0),
@@ -216,7 +216,7 @@ namespace espressopp {
 
       class_<ExtPlumed, shared_ptr<ExtPlumed>, bases<Extension> >
 
-        ("integrator_ExtPlumed", init< shared_ptr< System >, python::object, string, string, real, bool>())
+        ("integrator_ExtPlumed", init< shared_ptr< System >, string, string, real, bool>())
         .def("getBias", &ExtPlumed::getBias)
         .def("connect", &ExtPlumed::connect)
         .def("disconnect", &ExtPlumed::disconnect)

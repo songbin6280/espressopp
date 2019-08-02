@@ -76,14 +76,10 @@ import mpi4py.MPI as MPI
 
 class ExtPlumedLocal(ExtensionLocal, integrator_ExtPlumed):
 
-    def __init__(self, system, cmd, log, dt=0.005, restart=False):
-        if pmi._PMIComm and pmi._PMIComm.isActive():
-            if pmi._MPIcomm.rank in pmi._PMIComm.getMPIcpugroup():
-                cxxinit(self, integrator_ExtPlumed, system, pmi._PMIComm.getMPIsubcomm(), cmd, log, dt, restart)
-            else:
-                pass
-        else:
-            cxxinit(self, integrator_ExtPlumed, system, pmi._MPIcomm, cmd, log, dt, restart)
+    def __init__(self, system, cmd, log, dt, restart=False):
+
+        if not (pmi._PMIComm and pmi._PMIComm.isActive()) or pmi._MPIcomm.rank in pmi._PMIComm.getMPIcpugroup():
+            cxxinit(self, integrator_ExtPlumed, system, cmd, log, dt, restart)
 
 if pmi.isController :
     class ExtPlumed(Extension):

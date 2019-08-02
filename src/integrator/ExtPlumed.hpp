@@ -37,7 +37,7 @@ namespace espressopp {
     class ExtPlumed : public Extension {
 
     public:
-      ExtPlumed(shared_ptr < System >, python::object, std::string, std::string, real, bool);
+      ExtPlumed(shared_ptr < System >, std::string, std::string, real, bool);
       real getBias();
 
       virtual ~ExtPlumed();
