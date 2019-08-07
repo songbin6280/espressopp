@@ -110,7 +110,7 @@ namespace espressopp {
     }
 
     void ExtPlumed::setStep() {
-      step = integrator->getStep();
+      step = long(integrator->getStep());
     }
 
     void ExtPlumed::updateForces() {
@@ -134,7 +134,7 @@ namespace espressopp {
             tp.first<nreal && !tp.second.isDone();
             ++tp.first, ++tp.second)
           {
-            gatindex[tp.first] = static_cast<int>(tp.second->id())-1;
+            gatindex[tp.first] = tp.second->getId() - 1;
           }
         particlesChanged = false;
 
@@ -143,7 +143,7 @@ namespace espressopp {
             tp.first<nreal && !tp.second.isDone();
             ++tp.first, ++tp.second)
           {
-            gatindex[tp.first] = static_cast<int>(tp.second->id())-1;
+            gatindex[tp.first] = tp.second->getId() - 1;
           }
         particlesChanged = false;
       }
@@ -158,7 +158,7 @@ namespace espressopp {
           std::copy(tp.second->position().begin(), tp.second->position().end(), &pos[tp.first*3]);
         }
 
-      p->cmd("setStep",&step);
+      p->cmd("setStepLong",&step);
       p->cmd("setAtomsNlocal",&nreal);
       p->cmd("setAtomsGatindex",&gatindex[0]);
 
@@ -202,9 +202,7 @@ namespace espressopp {
         }
     }
 
-    void ExtPlumed::updateStep() {
-      step = integrator->getStep()+1;
-    }
+    void ExtPlumed::updateStep() {step++;}
 
     /****************************************************
      ** REGISTRATION WITH PYTHON

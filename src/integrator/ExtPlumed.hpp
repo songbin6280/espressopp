@@ -47,7 +47,7 @@ namespace espressopp {
     private:
       PLMD::Plumed * p;
       real dt;
-      int step;
+      long step;
 
       longint nreal; // total number of atoms (real & ghost) on the processor
       longint natoms; // total number of atoms
