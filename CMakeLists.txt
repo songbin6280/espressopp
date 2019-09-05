@@ -89,6 +89,32 @@ endif()
 
 
 ########################################################################
+#Process Plumed settings
+########################################################################
+
+set(PLUMED_LINK_OPTIONS runtime shared static)
+set(PLUMED_LINK_TYPE "runtime" CACHE STRING "3 ways to link PLUMED: runtime, static, shared")
+set_property(CACHE PLUMED_LINK_TYPE PROPERTY STRINGS ${PLUMED_LINK_OPTIONS})
+
+if (NOT "${PLUMED_LINK_TYPE}" STREQUAL "runtime")
+  if (DEFINED PLUMED_HOME)
+    find_path(PLUMED_INSTALL_DIR NAMES lib/plumed/src/lib/Plumed.cmake PATHS ${PLUMED_HOME} DOC "Directory plumed is installed to. Should contain lib/plumed/src/lib/Plumed.cmake")
+  else(DEFINED PLUMED_HOME)
+    find_path(PLUMED_INSTALL_DIR NAMES lib/plumed/src/lib/Plumed.cmake DOC "Directory plumed is installed to. Should contain lib/plumed/src/lib/Plumed.cmake")
+  endif(DEFINED PLUMED_HOME)
+  include(${PLUMED_INSTALL_DIR}/lib/plumed/src/lib/Plumed.cmake)
+  if("${PLUMED_LINK_TYPE}" STREQUAL "static")
+    set(PLUMED_LIBRARIES ${PLUMED_STATIC_LOAD})
+  elseif("${PLUMED_LINK_TYPE}" STREQUAL "shared")
+    set(PLUMED_LIBRARIES ${PLUMED_SHARED_LOAD})
+  endif()
+  set(EXTERNAL_PLUMED ON)
+else()
+  set(PLUMED_LIBRARIES espressopp_plumed)
+  set(EXTERNAL_PLUMED OFF)
+endif(NOT "${PLUMED_LINK_TYPE}" STREQUAL "runtime")
+
+########################################################################
 #Process Python settings
 ########################################################################
 

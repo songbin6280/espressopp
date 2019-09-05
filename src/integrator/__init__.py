@@ -65,3 +65,4 @@ from espressopp.integrator.VelocityVerletOnRadius import *
 from espressopp.integrator.AssociationReaction import *
 from espressopp.integrator.EmptyExtension import *
 from espressopp.integrator.MinimizeEnergy import *
+from espressopp.integrator.ExtPlumed import *
