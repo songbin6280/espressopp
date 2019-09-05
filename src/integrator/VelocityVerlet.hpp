@@ -50,6 +50,10 @@ namespace espressopp {
 
         void resetTimers();
 
+        /** Returns the number of resorts done during a single call to integrator.run().
+            Its value is reset to zero at the beginning of each run. */
+        int getNumResorts() const;
+
         /** Register this class so it can be used from Python. */
         static void registerPython();
         void setReCalcForces(bool);
@@ -57,6 +61,7 @@ namespace espressopp {
 
       protected:
         bool resortFlag;  //!< true implies need for resort of particles
+        int nResorts;
         real maxDist;
 
         real maxCut;
